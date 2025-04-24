@@ -8,7 +8,7 @@ export default class MyPromise {
         this.onRejectedCallbacks = []; // 失败回调队列
 
         //resolve函数将promise状态变为fulfilled
-        //同时检查是否有注册的成功回调，如果有则立即执行(因为then中回调方法执行时resolve还不一定被调用过)(then方法的调用是同步的,resolve却可能是异步的)
+        //同时检查是否有注册的成功回调，如果有则立即执行(因为then中回调方法执行时resolve还不一定被调用过)(then方法是被同步调用的,resolve却可能是被异步调用的)
         const resolve = (value) => {
             if (this.state === 'pending') {
                 this.state = 'fulfilled';
@@ -25,7 +25,8 @@ export default class MyPromise {
                 this.onRejectedCallbacks.forEach((cb) => cb(reason));
             }
         };
-        //构造函数的执行部分，尝试向executor中传入上面定义的resolve,reject,如果发生错误则将错误传给reject函数(也就是即使executor中代码有错程序也不会崩溃)
+        //构造函数的执行部分，尝试向executor中传入上面定义的resolve,reject
+        //如果发生错误则将错误传给reject函数(也就是即使executor中代码有错程序也不会崩溃)
         try {
             executor(resolve, reject);
         } catch (err) {
@@ -124,7 +125,7 @@ export default class MyPromise {
         );
     }
 
-    //Promise.all()静态方法,用一个Promise来包裹所有传入的promise,任意promise失败都会导致大promise失败,只有全部成功大promise才会resolve(包含所有promise的value的数组)
+    //Promise.all()静态方法,用一个Promise来包裹所有传入的promise,任意promise失败都会导致大promise失败,只有全部成功大promise才会resolve(包含所有promise的value的数组,按传入顺序)
     static all(iterable) {
         return new MyPromise((resolve, reject) => {
             const promises = Array.from(iterable);
@@ -172,3 +173,6 @@ export default class MyPromise {
     }
 }
 
+//上面的代码还有两个小问题：
+//1.resolve 中没有对 thenable 对象（类似 Promise 的对象）进行递归解析
+//2.Promise.all 的边界情况:如果传入的 iterable 参数中有非 Promise 对象，当前实现会导致错误。
